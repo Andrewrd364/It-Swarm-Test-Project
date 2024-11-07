@@ -55,7 +55,7 @@ namespace It_Swarm_Test_Project.Controllers
         {
             var apartment = await _context.Apartments
             .Include(a => a.CurrentMeter)
-            .ThenInclude(m => m.Readings) // Загрузка всех показаний текущего счётчика
+            .ThenInclude(m => m.Readings) 
             .FirstOrDefaultAsync(a => a.Id == apartmentId);
 
             if (apartment == null)
