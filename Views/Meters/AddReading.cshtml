@@ -1,0 +1,38 @@
+﻿@model It_Swarm_Test_Project.Models.Database.Apartment
+
+@{
+    ViewData["Title"] = "Добавить новое показание счётчика";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<h3>Счётчик для квартиры: @Model.Street, @Model.House, @Model.ApartmentNumber</h3>
+
+<form asp-action="AddReading" method="post">
+    <div class="form-group">
+        <label for="newReadingValue">Новое показание счётчика:</label>
+        <input type="number" id="newReadingValue" name="newReadingValue" class="form-control" step="0.01" required />
+    </div>
+
+    <div class="form-group">
+        <label for="nextVerificationDate">Дата следующей поверки:</label>
+        <input type="date" id="nextVerificationDate" name="nextVerificationDate" class="form-control" required />
+    </div>
+
+    <input type="hidden" name="apartmentId" value="@Model.Id" />
+
+    <button type="submit" class="btn btn-primary">Добавить показание</button>
+</form>
+
+<!-- Ошибки модели -->
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger mt-3">
+        <ul>
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}

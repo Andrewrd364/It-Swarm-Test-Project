@@ -1,0 +1,131 @@
+﻿@model IEnumerable<It_Swarm_Test_Project.Models.Database.Apartment>
+
+@{
+    ViewData["Title"] = "Список квартир";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<!-- Форма фильтрации -->
+<form asp-action="Index" method="get" class="form-inline mb-3">
+    <div class="form-group">
+        <label for="street">Улица:</label>
+        <input type="text" id="street" name="street" value="@ViewContext.HttpContext.Request.Query["street"]" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="house">Дом:</label>
+        <input type="text" id="house" name="house" value="@ViewContext.HttpContext.Request.Query["house"]" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Фильтровать</button>
+    <a href="@Url.Action("Index", "Apartments")" class="btn btn-secondary">Сбросить</a>
+</form>
+
+
+<!-- Список квартир -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>Улица</th>
+            <th>Дом</th>
+            <th>Квартира</th>
+            <th>Текущие показания счётчика</th>
+            <th>Последняя дата проверки</th>
+            <th>Номер счётчика</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var apartment in Model)
+        {
+            <tr>
+                <td>@apartment.Street</td>
+                <td>@apartment.House</td>
+                <td>@apartment.ApartmentNumber</td>
+                <td>@(apartment.LatestReading != null ? apartment.LatestReading.Value.ToString() : "")</td>
+                <td>@(apartment.CurrentMeter != null ? apartment.CurrentMeter.LastVerificationDate.ToShortDateString(): "")</td>
+                <td>@(apartment.CurrentMeter != null ? apartment.CurrentMeter.SerialNumber : "")</td>
+                <td>
+                    @if (apartment.CurrentMeter == null) // Если счётчик отсутствует
+                    {
+                        <a href="@Url.Action("ReplaceMeter", "Apartments", new { id = apartment.Id })" class="btn btn-success btn-sm">Добавить счётчик</a>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("ReplaceMeter", "Apartments", new { id = apartment.Id })" class="btn btn-warning btn-sm">Заменить счётчик</a>
+                        <button class="btn btn-info btn-sm" onclick="showReplacementHistory(@apartment.Id)">
+                            История замен
+                        </button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Модальное окно -->
+<div class="modal fade" id="replacementHistoryModal" tabindex="-1" aria-labelledby="replacementHistoryLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="replacementHistoryLabel">История замен счётчиков</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Дата установки</th>
+                            <th>Номер нового счётчика</th>
+                            <th>Дата следующей проверки</th>
+                            <th>Показание старого счётчика</th>
+                            <th>Дата снятия показаний</th>
+                        </tr>
+                    </thead>
+                    <tbody id="replacementHistoryTable">
+                        <!-- История замен будет загружена через JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showReplacementHistory(apartmentId) {
+        // Отправляем запрос для получения истории замен
+        fetch(`/Apartments/GetReplacementHistory?apartmentId=${apartmentId}`)
+            .then(response => response.json())
+            .then(data => {
+                 // Для проверки данных в консоли
+                console.log(data);
+                const tableBody = document.getElementById("replacementHistoryTable");
+                tableBody.innerHTML = ""; // Очищаем таблицу
+
+                // Заполняем таблицу новыми данными
+                data.forEach(history => {
+                    const row = document.createElement("tr");
+                    const installationDate = history.installationDate ? new Date(history.installationDate).toLocaleDateString('ru-RU') : "Нет данных";
+                    const nextVerificationDate = history.nextVerificationDate ? new Date(history.nextVerificationDate).toLocaleDateString('ru-RU') : "Нет данных";
+                    const previousReadingValue = history.previousReadingValue !== null && history.previousReadingValue !== undefined ? history.previousReadingValue : "Нет данных";
+                    
+                    const previousReadingDate = history.previousReadingDate ? new Date(history.previousReadingDate).toLocaleDateString('ru-RU') : "Нет данных";
+
+                    // Заполняем строку таблицы
+                    row.innerHTML = `
+        <td>${installationDate}</td>
+        <td>${history.newMeterSerialNumber || "Нет данных"}</td>
+        <td>${nextVerificationDate}</td>
+        <td>${previousReadingValue}</td>
+        <td>${previousReadingDate}</td>
+    `;
+
+                    tableBody.appendChild(row);
+                });
+
+                // Открываем модальное окно
+                const replacementHistoryModal = new bootstrap.Modal(document.getElementById("replacementHistoryModal"));
+                replacementHistoryModal.show();
+            })
+            .catch(error => console.error('Ошибка при загрузке истории замен:', error));
+    }
+</script>

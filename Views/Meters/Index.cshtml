@@ -1,0 +1,50 @@
+﻿@model IEnumerable<It_Swarm_Test_Project.Models.Database.Apartment>
+
+@{
+    ViewData["Title"] = "Счётчики, требующие проверки на данный момент";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form asp-action="Index" method="get" class="form-inline mb-3">
+    <div class="form-group">
+        <label for="street">Улица:</label>
+        <input type="text" id="street" name="street" value="@ViewContext.HttpContext.Request.Query["street"]" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="house">Дом:</label>
+        <input type="text" id="house" name="house" value="@ViewContext.HttpContext.Request.Query["house"]" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Фильтровать</button>
+    <a href="@Url.Action("Index", "Meters")" class="btn btn-secondary">Сбросить</a>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Номер счётчика</th>
+            <th>Последняя дата проверки</th>
+            <th>Следующая дата проверки</th>
+            <th>Улица</th>
+            <th>Дом</th>
+            <th>Квартира</th>
+            <th>Действие</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var apartment in Model)
+        {
+            <tr>
+                <td>@apartment.CurrentMeter?.SerialNumber</td>
+                <td>@apartment.CurrentMeter?.LastVerificationDate.ToShortDateString()</td>
+                <td>@apartment.CurrentMeter?.NextVerificationDate.ToShortDateString()</td>
+                <td>@apartment.Street</td>
+                <td>@apartment.House</td>
+                <td>@apartment.ApartmentNumber</td>
+                <td>
+                    <a href="@Url.Action("AddReading", "Meters", new { apartmentId = apartment.Id })" class="btn btn-info">Добавить показание</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
